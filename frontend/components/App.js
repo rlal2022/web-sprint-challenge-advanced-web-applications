@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, Routes, Route, useNavigate } from "react-router-dom";
 import Articles from "./Articles";
 import LoginForm from "./LoginForm";
@@ -6,6 +6,7 @@ import Message from "./Message";
 import ArticleForm from "./ArticleForm";
 import Spinner from "./Spinner";
 import axiosWithAuth from "../axios/index";
+import axios from "axios";
 
 const articlesUrl = "http://localhost:9000/api/articles";
 const loginUrl = "http://localhost:9000/api/login";
@@ -17,15 +18,28 @@ export default function App() {
   const [currentArticleId, setCurrentArticleId] = useState();
   const [spinnerOn, setSpinnerOn] = useState(false);
 
+  const initialFormValues = { title: "", text: "", topic: "" };
+  const [inititalValues, setValues] = useState(initialFormValues);
+
+  const [currentArticle, setCurrentArticle] = useState();
+
+  useEffect(
+    () =>
+      setCurrentArticle(
+        articles.find((art) => art.article_id === currentArticle)
+      ),
+    [currentArticleId]
+  );
+
   // ✨ Research `useNavigate` in React Router v.6
   const navigate = useNavigate();
   const redirectToLogin = () => {
     /* ✨ implement */
-    navigate("/login/");
+    navigate("/");
   };
   const redirectToArticles = () => {
     /* ✨ implement */
-    navigate("/articles/");
+    navigate("/articles");
   };
 
   const logout = () => {
@@ -51,7 +65,7 @@ export default function App() {
     setSpinnerOn(true);
     {
       axios
-        .post("http://localhost:9000/api/login", {
+        .post(loginUrl, {
           username: username.trim(),
           password: password.trim(),
         })
@@ -77,28 +91,19 @@ export default function App() {
     // if it's a 401 the token might have gone bad, and we should redirect to login.
     // Don't forget to turn off the spinner!
 
-    /*
-
-    - `[GET] http://localhost:9000/api/articles`
-  - Expects an `Authorization` request header containing a valid auth token
-  - The response to a proper request includes `200 OK` and a list of articles which could be empty
-  */
-
     setMessage("");
     setSpinnerOn(true);
-    axiosWithAuth
-      .get("http://localhost:9000/api/articles", articles)
+    axiosWithAuth()
+      .get(articlesUrl)
       .then((res) => {
-        setArticles(res.data);
+        setArticles(res.data.articles);
+        console.log("fetching articles!", res.data);
         setMessage(res.data.message);
         setSpinnerOn(false);
       })
       .catch((err) => {
-        if (err === "401") {
-          redirectToLogin;
-        } else {
-          setSpinnerOn(false);
-        }
+        console.log(err);
+        redirectToLogin();
       });
   };
 
@@ -107,69 +112,76 @@ export default function App() {
     // The flow is very similar to the `getArticles` function.
     // You'll know what to do! Use log statements or breakpoints
     // to inspect the response from the server.
-    /*
-- `[POST] http://localhost:9000/api/articles`
-  - Expects an `Authorization` request header containing a valid auth token
-  - Expects a payload with the following properties: `title`, `text`, `topic`
-  - The `title` and `text` length must be >= 1, after trimming
-  - The `topic` needs to be one of three values: `React`, `JavaScript`, `Node`
-  - Example of payload: `{ "title": "foo", "text": "bar", "topic": "React" }`
-  - The response to a proper request includes `201 Created`, a success message and the new article
-    */
 
-    axios
-      .post("http://localhost:9000/api/articles", article, {
-        title: title.trim(),
-        text: text.trim(),
-        topic: topic.trim(),
+    setMessage("");
+    setSpinnerOn(true);
+    axiosWithAuth()
+      .post("/articles", {
+        title: article.title.trim(),
+        text: article.text.trim(),
+        topic: article.topic.trim(),
       })
       .then((res) => {
-        setArticles(res.data);
+        // console.log(res.data);
+        setArticles([...articles, res.data.article]);
+        setMessage(res.data.message);
+        setSpinnerOn(false);
       })
       .catch((err) => console.log(err));
+
+    // axiosWithAuth()
+    //   .post("/articles", article)
+    //   .then((res) => {
+    //     console.log("article posted!", res.data.articles);
+    //     setSpinnerOn(false);
+    //     setArticles([...articles, res.data.article]);
+    //     setMessage(res.data.message);
+    //     setValues(initialFormValues);
+    //   })
+    //   .catch((err) => console.log(err));
   };
 
   const updateArticle = ({ article_id, article }) => {
     // ✨ implement
     // You got this!
-    /*
-    - `[PUT] http://localhost:9000/api/articles/:article_id`
-  - Expects an `Authorization` request header containing a valid auth token
-  - Expects a payload with the following properties: `title`, `text`, `topic`
-  - The `title` and `text` length must be >= 1, after trimming
-  - The `topic` needs to be one of three values: `React`, `JavaScript`, `Node`
-  - Example of payload: `{ "title": "foo", "text": "bar", "topic": "React" }`
-  - The response to a proper request includes `200 OK`, a success message and the updated article
-  */
 
+    setMessage("");
     axiosWithAuth()
-      .put(`http://localhost:9000/api/articles/${article_id}`, article, {
-        title: title.trim(),
-        text: text.trim(),
-        topic: topic.trim(),
+      .put(`/articles/${article_id}`, {
+        title: article.title.trim(),
+        text: article.text.trim(),
+        topic: article.topic.trim(),
       })
       .then((res) => {
+        // console.log(res.data);
+        getArticles();
         setMessage(res.data.message);
+        setArticles([...articles, res.data.article]);
+        setValues(inititalValues);
       })
       .catch((err) => console.log(err));
+
+    // axiosWithAuth()
+    //   .put(`/articles/${article_id}`, article)
+    //   .then((res) => {
+    //     console.log("updating article!", res.data);
+    //     getArticles();
+    //     setArticles([...articles, res.data.article]);
+    //     setMessage(res.data.message);
+    //     setValues(initialFormValues);
+    //   })
+    //   .catch((err) => console.log(err));
   };
 
   const deleteArticle = (article_id) => {
     // ✨ implement
-    /*
-    - `[DELETE] http://localhost:9000/api/articles/:article_id`
-  - Expects an `Authorization` request header containing a valid auth token
-  - The response to a proper request includes `200 OK` and a success message
-  */
+
     axiosWithAuth()
-      .delete(`http://localhost:9000/api/articles/${article_id}`, {
-        title: title.trim(),
-        text: text.trim(),
-        topic: topic.trim(),
-      })
+      .delete(`/articles/${article_id}`)
       .then((res) => {
-        deleteArticle(id);
-        navigate("/articles/");
+        console.log("article deleted!", res.data);
+        setMessage(res.data.message);
+        setArticles(articles.filter((art) => art.article_id !== article_id));
       })
       .catch((err) => console.log(err));
   };
@@ -177,8 +189,8 @@ export default function App() {
   return (
     // ✨ fix the JSX: `Spinner`, `Message`, `LoginForm`, `ArticleForm` and `Articles` expect props ❗
     <>
-      <Spinner />
-      <Message />
+      <Spinner on={spinnerOn} />
+      <Message message={message} />
       <button id="logout" onClick={logout}>
         Logout from app
       </button>
@@ -195,13 +207,26 @@ export default function App() {
           </NavLink>
         </nav>
         <Routes>
-          <Route path="/" element={<LoginForm />} />
+          <Route path="/" element={<LoginForm login={login} />} />
           <Route
             path="articles"
             element={
               <>
-                <ArticleForm />
-                <Articles />
+                <ArticleForm
+                  postArticle={postArticle}
+                  setCurrentArticleId={setCurrentArticleId}
+                  deleteArticle={deleteArticle}
+                  updateArticle={updateArticle}
+                  articles={articles}
+                  getArticles={getArticles}
+                />
+                <Articles
+                  articles={articles}
+                  currentArticleId={currentArticleId}
+                  getArticles={getArticles}
+                  setCurrentArticleId={setCurrentArticleId}
+                  deleteArticle={deleteArticle}
+                />
               </>
             }
           />
