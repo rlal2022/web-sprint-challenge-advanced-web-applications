@@ -14,6 +14,6 @@ test("spinner renders properly when ON", () => {
 
 test("spinner renders properly when OFF", () => {
   render(<Spinner on={false} />);
-  const spinner = screen.findByTestId("spinner");
+  const spinner = screen.queryByText(/Please Wait.../i);
   expect(spinner).not.toBeInTheDocument();
 });

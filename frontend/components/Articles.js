@@ -25,6 +25,11 @@ export default function Articles(props) {
     }
   }, []);
 
+  const handleEdit = (id) => {
+    console.log("editing", id);
+    setCurrentArticleId(id);
+  };
+  console.log(articles);
   return (
     // ✨ fix the JSX: replace `Function.prototype` with actual functions
     // and use the articles prop to generate articles
@@ -43,9 +48,11 @@ export default function Articles(props) {
                 <div>
                   <button
                     disabled={false}
-                    onClick={() => {
-                      setCurrentArticleId(art.article_id);
-                    }}
+                    // onClick={() => {
+                    //   setCurrentArticleId(art.article_id);
+                    // }}
+
+                    onClick={() => handleEdit(art.article_id)}
                   >
                     Edit
                   </button>

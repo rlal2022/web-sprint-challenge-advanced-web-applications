@@ -23,13 +23,12 @@ export default function App() {
 
   const [currentArticle, setCurrentArticle] = useState();
 
-  useEffect(
-    () =>
-      setCurrentArticle(
-        articles.find((art) => art.article_id === currentArticle)
-      ),
-    [currentArticleId]
-  );
+  useEffect(() => {
+    console.log("current article id use effect", currentArticleId);
+    setCurrentArticle(
+      articles.find((art) => art.article_id === currentArticleId)
+    );
+  }, [currentArticleId]);
 
   // ✨ Research `useNavigate` in React Router v.6
   const navigate = useNavigate();
@@ -115,62 +114,52 @@ export default function App() {
 
     setMessage("");
     setSpinnerOn(true);
-    axiosWithAuth()
-      .post("/articles", {
-        title: article.title.trim(),
-        text: article.text.trim(),
-        topic: article.topic.trim(),
-      })
-      .then((res) => {
-        // console.log(res.data);
-        setArticles([...articles, res.data.article]);
-        setMessage(res.data.message);
-        setSpinnerOn(false);
-      })
-      .catch((err) => console.log(err));
-
     // axiosWithAuth()
-    //   .post("/articles", article)
+    //   .post("/articles", {
+    //     title: article.title.trim(),
+    //     text: article.text.trim(),
+    //     topic: article.topic.trim(),
+    //   })
     //   .then((res) => {
-    //     console.log("article posted!", res.data.articles);
-    //     setSpinnerOn(false);
+    //     // console.log(res.data);
     //     setArticles([...articles, res.data.article]);
     //     setMessage(res.data.message);
-    //     setValues(initialFormValues);
+    //     setSpinnerOn(false);
     //   })
     //   .catch((err) => console.log(err));
+
+    axiosWithAuth()
+      .post("/articles", article)
+      .then((res) => {
+        console.log("article posted!", res.data.article);
+        setSpinnerOn(false);
+        setArticles([...articles, res.data.article]);
+        setMessage(res.data.message);
+      })
+      .catch((err) => console.log(err));
   };
 
   const updateArticle = ({ article_id, article }) => {
     // ✨ implement
     // You got this!
-
+    console.log("updatearticle", article_id, article);
     setMessage("");
     axiosWithAuth()
-      .put(`/articles/${article_id}`, {
-        title: article.title.trim(),
-        text: article.text.trim(),
-        topic: article.topic.trim(),
-      })
+      .put(`/articles/${article_id}`, article)
       .then((res) => {
-        // console.log(res.data);
-        getArticles();
+        console.log("updating article!", res.data);
+        setArticles(
+          articles.map((element) => {
+            if (element.article_id === article_id) {
+              return res.data.article;
+            }
+            return element;
+          })
+        );
         setMessage(res.data.message);
-        setArticles([...articles, res.data.article]);
-        setValues(inititalValues);
+        setValues(initialFormValues);
       })
       .catch((err) => console.log(err));
-
-    // axiosWithAuth()
-    //   .put(`/articles/${article_id}`, article)
-    //   .then((res) => {
-    //     console.log("updating article!", res.data);
-    //     getArticles();
-    //     setArticles([...articles, res.data.article]);
-    //     setMessage(res.data.message);
-    //     setValues(initialFormValues);
-    //   })
-    //   .catch((err) => console.log(err));
   };
 
   const deleteArticle = (article_id) => {
@@ -215,10 +204,8 @@ export default function App() {
                 <ArticleForm
                   postArticle={postArticle}
                   setCurrentArticleId={setCurrentArticleId}
-                  deleteArticle={deleteArticle}
                   updateArticle={updateArticle}
-                  articles={articles}
-                  getArticles={getArticles}
+                  currentArticle={currentArticle}
                 />
                 <Articles
                   articles={articles}
@@ -226,6 +213,7 @@ export default function App() {
                   getArticles={getArticles}
                   setCurrentArticleId={setCurrentArticleId}
                   deleteArticle={deleteArticle}
+                  updateArticle={updateArticle}
                 />
               </>
             }
